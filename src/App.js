@@ -23,9 +23,9 @@ function prepareQuestions(questions) {
 const SCREEN = {
   HOME: "HOME",
   WEEK_SELECT: "WEEK_SELECT",
+  MULTI_WEEK_SELECT: "MULTI_WEEK_SELECT",
   QUIZ: "QUIZ",
   RESULTS: "RESULTS",
-  REVIEW: "REVIEW",
 };
 
 // --- Home Screen ---
@@ -53,6 +53,16 @@ function HomeScreen({ onSelect, wrongCount }) {
           <div className="card-icon">📅</div>
           <h2>Week Wise</h2>
           <p>Practice questions from a specific week at your own pace</p>
+          <div className="card-badge">{weeks.length} Weeks</div>
+        </button>
+
+        <button
+          className="mode-card card-multi"
+          onClick={() => onSelect("multi")}
+        >
+          <div className="card-icon">🗓️</div>
+          <h2>Multi-Week</h2>
+          <p>Pick multiple weeks and quiz across all selected content</p>
           <div className="card-badge">{weeks.length} Weeks</div>
         </button>
 
@@ -85,7 +95,7 @@ function HomeScreen({ onSelect, wrongCount }) {
   );
 }
 
-// --- Week Select Screen ---
+// --- Week Select Screen (single week) ---
 function WeekSelectScreen({ onBack, onSelect }) {
   const weeks = [...new Set(questionsData.map((q) => q.week))].sort(
     (a, b) => a - b
@@ -116,11 +126,180 @@ function WeekSelectScreen({ onBack, onSelect }) {
   );
 }
 
+// --- Multi-Week Select Screen ---
+// --- Multi-Week Select Screen ---
+function MultiWeekSelectScreen({ onBack, onStart }) {
+  const weeks = [...new Set(questionsData.map((q) => q.week))].sort(
+    (a, b) => a - b
+  );
+  const minWeek = weeks[0];
+  const maxWeek = weeks[weeks.length - 1];
+
+  const [mode, setMode] = useState("pick"); // "pick" | "range"
+  const [selected, setSelected] = useState(new Set());
+  const [fromWeek, setFromWeek] = useState(minWeek);
+  const [toWeek, setToWeek] = useState(maxWeek);
+
+  const toggleWeek = (week) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(week)) next.delete(week);
+      else next.add(week);
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    if (selected.size === weeks.length) setSelected(new Set());
+    else setSelected(new Set(weeks));
+  };
+
+  const rangeWeeks = weeks.filter((w) => w >= fromWeek && w <= toWeek);
+
+  const activeWeeks = mode === "range" ? rangeWeeks : [...selected];
+  const totalQuestions = questionsData.filter((q) =>
+    activeWeeks.includes(q.week)
+  ).length;
+
+  return (
+    <div className="week-screen">
+      <button className="back-btn" onClick={onBack}>
+        ← Back
+      </button>
+      <h2 className="section-title">Select Weeks</h2>
+      <p className="section-subtitle">Pick individual weeks or a range</p>
+
+      {/* Mode toggle */}
+      <div className="mode-toggle">
+        <button
+          className={`toggle-tab ${mode === "pick" ? "toggle-tab-active" : ""}`}
+          onClick={() => setMode("pick")}
+        >
+          Pick Weeks
+        </button>
+        <button
+          className={`toggle-tab ${mode === "range" ? "toggle-tab-active" : ""}`}
+          onClick={() => setMode("range")}
+        >
+          From – To
+        </button>
+      </div>
+
+      {mode === "pick" && (
+        <>
+          <div className="multi-controls">
+            <button className="toggle-all-btn" onClick={toggleAll}>
+              {selected.size === weeks.length ? "Deselect All" : "Select All"}
+            </button>
+            <span className="selection-summary">
+              {selected.size === 0
+                ? "No weeks selected"
+                : `${selected.size} week${selected.size > 1 ? "s" : ""} · ${totalQuestions} questions`}
+            </span>
+          </div>
+
+          <div className="week-grid">
+            {weeks.map((week) => {
+              const count = questionsData.filter((q) => q.week === week).length;
+              const isSelected = selected.has(week);
+              return (
+                <button
+                  key={week}
+                  className={`week-card ${isSelected ? "week-card-selected" : ""}`}
+                  onClick={() => toggleWeek(week)}
+                >
+                  <span className="week-check">{isSelected ? "✓" : ""}</span>
+                  <span className="week-number">Week {week}</span>
+                  <span className="week-count">{count} questions</span>
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      {mode === "range" && (
+        <div className="range-panel">
+          <div className="range-row">
+            <div className="range-field">
+              <label className="range-label">From</label>
+              <select
+                className="range-select"
+                value={fromWeek}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  setFromWeek(val);
+                  if (val > toWeek) setToWeek(val);
+                }}
+              >
+                {weeks.map((w) => (
+                  <option key={w} value={w}>
+                    Week {w}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="range-arrow">→</div>
+
+            <div className="range-field">
+              <label className="range-label">To</label>
+              <select
+                className="range-select"
+                value={toWeek}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  setToWeek(val);
+                  if (val < fromWeek) setFromWeek(val);
+                }}
+              >
+                {weeks.map((w) => (
+                  <option key={w} value={w}>
+                    Week {w}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="range-summary">
+            <span className="range-summary-weeks">
+              {rangeWeeks.length} week{rangeWeeks.length !== 1 ? "s" : ""}
+            </span>
+            <span className="range-summary-dot">·</span>
+            <span>{totalQuestions} questions</span>
+          </div>
+
+          <div className="range-preview">
+            {rangeWeeks.map((w) => (
+              <span key={w} className="range-week-chip">
+                W{w}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="multi-start-wrap">
+        <button
+          className="multi-start-btn"
+          disabled={totalQuestions === 0}
+          onClick={() => onStart(activeWeeks)}
+        >
+          {totalQuestions === 0
+            ? "Select at least one week"
+            : `Start Quiz · ${totalQuestions} Questions →`}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // --- Quiz Screen ---
 function QuizScreen({ questions, onFinish, onBack }) {
   const [current, setCurrent] = useState(0);
   const [selected, setSelected] = useState(null);
-  const [results, setResults] = useState([]); // {question, chosen, correct}
+  const [results, setResults] = useState([]);
   const [locked, setLocked] = useState(false);
 
   const q = questions[current];
@@ -134,11 +313,7 @@ function QuizScreen({ questions, onFinish, onBack }) {
       setLocked(true);
 
       const isCorrect = option === q.answer;
-      const result = {
-        question: q,
-        chosen: option,
-        correct: isCorrect,
-      };
+      const result = { question: q, chosen: option, correct: isCorrect };
 
       setTimeout(() => {
         const newResults = [...results, result];
@@ -189,9 +364,7 @@ function QuizScreen({ questions, onFinish, onBack }) {
             className={getOptionClass(opt)}
             onClick={() => handleAnswer(opt)}
           >
-            <span className="opt-letter">
-              {String.fromCharCode(65 + i)}
-            </span>
+            <span className="opt-letter">{String.fromCharCode(65 + i)}</span>
             <span className="opt-text">{opt}</span>
             {selected && opt === q.answer && (
               <span className="opt-icon">✓</span>
@@ -309,14 +482,12 @@ export default function App() {
   const [mode, setMode] = useState(null);
   const [quizQuestions, setQuizQuestions] = useState([]);
   const [quizResults, setQuizResults] = useState([]);
-  
-  // Initialize from localStorage
+
   const [wrongQuestions, setWrongQuestions] = useState(() => {
     const saved = localStorage.getItem("sdg-wrong-questions");
     return saved ? JSON.parse(saved) : [];
   });
 
-  // Save to localStorage whenever wrongQuestions changes
   useEffect(() => {
     localStorage.setItem("sdg-wrong-questions", JSON.stringify(wrongQuestions));
   }, [wrongQuestions]);
@@ -324,6 +495,8 @@ export default function App() {
   const handleHomeSelect = (option) => {
     if (option === "week") {
       setScreen(SCREEN.WEEK_SELECT);
+    } else if (option === "multi") {
+      setScreen(SCREEN.MULTI_WEEK_SELECT);
     } else if (option === "full") {
       setMode("full");
       setQuizQuestions(prepareQuestions(questionsData));
@@ -342,21 +515,24 @@ export default function App() {
     setScreen(SCREEN.QUIZ);
   };
 
+  const handleMultiWeekStart = (selectedWeeks) => {
+    const qs = questionsData.filter((q) => selectedWeeks.includes(q.week));
+    setMode(`multi-${selectedWeeks.join(",")}`);
+    setQuizQuestions(prepareQuestions(qs));
+    setScreen(SCREEN.QUIZ);
+  };
+
   const handleQuizFinish = (results) => {
     setQuizResults(results);
-    
-    // Separate right and wrong answers
+
     const newlyWrong = results.filter((r) => !r.correct).map((r) => r.question);
-    const newlyCorrectIds = results.filter((r) => r.correct).map((r) => r.question.id);
+    const newlyCorrectIds = results
+      .filter((r) => r.correct)
+      .map((r) => r.question.id);
 
     setWrongQuestions((prev) => {
-      // First, remove any questions the user just got right!
       const stillWrong = prev.filter((q) => !newlyCorrectIds.includes(q.id));
-      
-      // Then, add the newly wrong questions
       const combined = [...stillWrong, ...newlyWrong];
-      
-      // Finally, deduplicate by id
       const seen = new Set();
       return combined.filter((q) => {
         if (seen.has(q.id)) return false;
@@ -364,7 +540,7 @@ export default function App() {
         return true;
       });
     });
-    
+
     setScreen(SCREEN.RESULTS);
   };
 
@@ -381,10 +557,10 @@ export default function App() {
           />
         )}
         {screen === SCREEN.WEEK_SELECT && (
-          <WeekSelectScreen
-            onBack={goHome}
-            onSelect={handleWeekSelect}
-          />
+          <WeekSelectScreen onBack={goHome} onSelect={handleWeekSelect} />
+        )}
+        {screen === SCREEN.MULTI_WEEK_SELECT && (
+          <MultiWeekSelectScreen onBack={goHome} onStart={handleMultiWeekStart} />
         )}
         {screen === SCREEN.QUIZ && (
           <QuizScreen
