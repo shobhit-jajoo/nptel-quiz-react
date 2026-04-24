@@ -325,7 +325,7 @@ function QuizScreen({ questions, onFinish, onBack }) {
         } else {
           onFinish(newResults);
         }
-      }, 2000);
+      }, 1200);
     },
     [locked, q, results, current, total, onFinish]
   );
