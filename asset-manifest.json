@@ -1,13 +1,13 @@
 {
   "files": {
     "main.css": "/nptel-quiz-react/static/css/main.add54643.css",
-    "main.js": "/nptel-quiz-react/static/js/main.c054645c.js",
+    "main.js": "/nptel-quiz-react/static/js/main.1981d80a.js",
     "index.html": "/nptel-quiz-react/index.html",
     "main.add54643.css.map": "/nptel-quiz-react/static/css/main.add54643.css.map",
-    "main.c054645c.js.map": "/nptel-quiz-react/static/js/main.c054645c.js.map"
+    "main.1981d80a.js.map": "/nptel-quiz-react/static/js/main.1981d80a.js.map"
   },
   "entrypoints": [
     "static/css/main.add54643.css",
-    "static/js/main.c054645c.js"
+    "static/js/main.1981d80a.js"
   ]
 }
