@@ -42,7 +42,7 @@ function HomeScreen({ onSelect, wrongCount }) {
           <div className="logo-dot" />
         </div>
         <h1>Quiz Arena</h1>
-        <p className="tagline">Master the Sustainable Development Goals</p>
+        <p className="tagline">Master Understanding Incubation and Entrepreneurship</p>
       </div>
 
       <div className="mode-grid">
