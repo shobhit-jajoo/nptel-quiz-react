@@ -769,4 +769,103 @@ export default function App() {
   const handleHomeSelect = (option) => {
     if (option === "week") {
       setScreen(SCREEN.WEEK_SELECT);
-    } else if (op
+    } else if (option === "multi") {
+      setScreen(SCREEN.MULTI_WEEK_SELECT);
+    } else if (option === "full") {
+      startQuiz(questionsData);
+    } else if (option === "review") {
+      startQuiz(wrongQuestions);
+    }
+  };
+
+  const handleWeekSelect = (week) => {
+    const weekQuestions = questionsData.filter(
+      (q) => q.week === week
+    );
+
+    startQuiz(weekQuestions);
+  };
+
+  const handleMultiWeekStart = (selectedWeeks) => {
+    const selectedQuestions = questionsData.filter((q) =>
+      selectedWeeks.includes(q.week)
+    );
+
+    startQuiz(selectedQuestions);
+  };
+
+  const handleQuizFinish = (results) => {
+    setQuizResults(results);
+
+    const newlyWrong = results
+      .filter((r) => !r.correct)
+      .map((r) => r.question);
+
+    const newlyCorrectIds = results
+      .filter((r) => r.correct)
+      .map((r) => r.question.id);
+
+    setWrongQuestions((prev) => {
+      const stillWrong = prev.filter(
+        (q) => !newlyCorrectIds.includes(q.id)
+      );
+
+      const combined = [...stillWrong, ...newlyWrong];
+      const seen = new Set();
+
+      return combined.filter((q) => {
+        if (seen.has(q.id)) return false;
+
+        seen.add(q.id);
+        return true;
+      });
+    });
+
+    setScreen(SCREEN.RESULTS);
+  };
+
+  return (
+    <div className="app">
+      <div className="app-bg" />
+
+      <div className="app-container">
+        {screen === SCREEN.HOME && (
+          <HomeScreen
+            onSelect={handleHomeSelect}
+            wrongCount={wrongQuestions.length}
+          />
+        )}
+
+        {screen === SCREEN.WEEK_SELECT && (
+          <WeekSelectScreen
+            onBack={goHome}
+            onSelect={handleWeekSelect}
+          />
+        )}
+
+        {screen === SCREEN.MULTI_WEEK_SELECT && (
+          <MultiWeekSelectScreen
+            onBack={goHome}
+            onStart={handleMultiWeekStart}
+          />
+        )}
+
+        {screen === SCREEN.QUIZ && (
+          <QuizScreen
+            questions={quizQuestions}
+            onFinish={handleQuizFinish}
+            onBack={goHome}
+          />
+        )}
+
+        {screen === SCREEN.RESULTS && (
+          <ResultsScreen
+            results={quizResults}
+            onHome={goHome}
+            onReview={() => startQuiz(wrongQuestions)}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
